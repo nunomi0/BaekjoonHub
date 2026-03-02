@@ -11,7 +11,6 @@
   - 커밋 메시지: message 
   - 백준 문제 카테고리: category
   - 파일명: fileName
-  - Readme 내용 : readme
 */
 async function findData(data) {
   try {
@@ -23,7 +22,9 @@ async function findData(data) {
         'username': findUsername(),
         'language': table[0]["language"]
       })
-      data = selectBestSubmissionList(table)[0];
+      data = table
+        .slice()
+        .sort((a, b) => Number(b.submissionId) - Number(a.submissionId))[0];
     }
     if (isNaN(Number(data.problemId)) || Number(data.problemId) < 1000) throw new Error(`정책상 대회 문제는 업로드 되지 않습니다. 대회 문제가 아니라고 판단된다면 이슈로 남겨주시길 바랍니다.\n문제 ID: ${data.problemId}`);
     data = { ...data, ...await findProblemInfoAndSubmissionCode(data.problemId, data.submissionId) };
@@ -38,44 +39,30 @@ async function findData(data) {
 /**
  * 문제의 상세 정보를 가지고, 문제의 업로드할 디렉토리, 파일명, 커밋 메시지, 문제 설명을 파싱하여 반환합니다.
  * @param {Object} data
- * @returns {Object} { directory, fileName, message, readme, code }
+ * @returns {Object} { directory, fileName, message, code }
  */
 async function makeDetailMessageAndReadme(data) {
   const { problemId, submissionId, result, title, level, problem_tags,
     problem_description, problem_input, problem_output, submissionTime,
     code, language, memory, runtime } = data;
   const score = parseNumberFromString(result);
-  const directory = await getDirNameByOrgOption(
-    `백준/${level.replace(/ .*/, '')}/${problemId}. ${convertSingleCharToDoubleChar(title)}`,
-    langVersionRemove(language, null)
-  );
-  const message = `[${level}] Title: ${title}, Time: ${runtime} ms, Memory: ${memory} KB`
-    + ((isNaN(score)) ? ' ' : `, Score: ${score} point `) // 서브 태스크가 있는 문제로, 점수가 있는 경우 점수까지 커밋 메시지에 표기
-    + `-BaekjoonHub`;
-  const category = problem_tags.join(', ');
-  const fileName = `${convertSingleCharToDoubleChar(title)}.${languages[language]}`;
-  const dateInfo = submissionTime ?? getDateString(new Date(Date.now()));
-  // prettier-ignore-start
-  const readme = `# [${level}] ${title} - ${problemId} \n\n`
-    + `[문제 링크](https://www.acmicpc.net/problem/${problemId}) \n\n`
-    + `### 성능 요약\n\n`
-    + `메모리: ${memory} KB, `
-    + `시간: ${runtime} ms\n\n`
-    + `### 분류\n\n`
-    + `${category || "Empty"}\n\n` + (!!problem_description ? ''
-    + `### 제출 일자\n\n`
-    + `${dateInfo}\n\n`
-      + `### 문제 설명\n\n${problem_description}\n\n`
-      + `### 입력 \n\n ${problem_input}\n\n`
-      + `### 출력 \n\n ${problem_output}\n\n` : '');
-  // prettier-ignore-end
+  const directory = getYYMMDD(new Date(Date.now()));
+  const link = `https://www.acmicpc.net/problem/${problemId}`;
+  const message = link;
+  const fileName = `[백준][${level}] ${convertSingleCharToDoubleChar(title)}.${languages[language]}`;
   return {
     directory,
     fileName,
     message,
-    readme,
     code
   };
+}
+
+function getYYMMDD(date) {
+  const yy = String(date.getFullYear()).slice(-2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}${mm}${dd}`;
 }
 
 /*

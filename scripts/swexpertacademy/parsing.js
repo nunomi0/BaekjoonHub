@@ -24,7 +24,6 @@ function updateTextSourceEvent() {
   - directory : 레포에 기록될 폴더명
   - message : 커밋 메시지
   - fileName : 파일명
-  - readme : README.md에 작성할 내용
   - code : 소스코드 내용
 */
 async function parseData() {
@@ -82,28 +81,16 @@ async function parseData() {
 }
 
 async function makeData(origin) {
-  const { link, problemId, level, extension, title, runtime, memory, code, length, submissionTime, language } = origin;
-  /*
-  * SWEA의 경우에는 JAVA 같이 모두 대문자인 경우가 존재합니다. 하지만 타 플랫폼들(백준, 프로그래머스)는 첫문자가 모두 대문자로 시작합니다.
-  * 그래서 이와 같은 케이스를 처리를 위해 첫문자만 대문자를 유지하고 나머지 문자는 소문자로 변환합니다.
-  * C++ 같은 경우에는 문자가 그대로 유지됩니다.
-  * */
-  const lang = (language === language.toUpperCase()) ? language.substring(0, 1) + language.substring(1).toLowerCase() : language
-  const directory = await getDirNameByOrgOption(`SWEA/${level}/${problemId}. ${convertSingleCharToDoubleChar(title)}`, lang);
-  const message = `[${level}] Title: ${title}, Time: ${runtime}, Memory: ${memory} -BaekjoonHub`;
-  const fileName = `${convertSingleCharToDoubleChar(title)}.${extension}`;
-  const dateInfo = submissionTime ?? getDateString(new Date(Date.now()));
-  // prettier-ignore
-  const readme =
-    `# [${level}] ${title} - ${problemId} \n\n`
-    + `[문제 링크](${link}) \n\n`
-    + `### 성능 요약\n\n`
-    + `메모리: ${memory}, `
-    + `시간: ${runtime}, `
-    + `코드길이: ${length} Bytes\n\n`
-    + `### 제출 일자\n\n`
-    + `${dateInfo}\n\n`
-    + `\n\n`
-    + `> 출처: SW Expert Academy, https://swexpertacademy.com/main/code/problem/problemList.do`;
-  return { problemId, directory, message, fileName, readme, code };
+  const { link, problemId, level, extension, title, runtime, memory, code } = origin;
+  const directory = getYYMMDD(new Date(Date.now()));
+  const message = link;
+  const fileName = `[SWEA][${level}] ${convertSingleCharToDoubleChar(title)}.${extension}`;
+  return { problemId, directory, message, fileName, code };
+}
+
+function getYYMMDD(date) {
+  const yy = String(date.getFullYear()).slice(-2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}${mm}${dd}`;
 }

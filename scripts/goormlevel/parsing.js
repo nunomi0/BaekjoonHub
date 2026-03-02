@@ -96,7 +96,6 @@ async function parseData() {
  * @prop {string} directory 레포에 기록될 폴더명
  * @prop {string} message 커밋 메시지
  * @prop {string} fileName 파일명
- * @prop {string} readme README.md에 작성할 내용
  * @prop {string} code 소스코드 내용
  */
 
@@ -125,19 +124,16 @@ async function makeData({
   runtime,
 }) {
   const languageExtension = languages[language.toLowerCase()];
-  const directory = await getDirNameByOrgOption(`goormlevel/${examSequence}/${quizNumber}. ${convertSingleCharToDoubleChar(title)}`, language);
-  const message = `[난이도 ${difficulty}] Title: ${title}, Time: ${runtime}, Memory: ${memory} -BaekjoonHub`;
-  const fileName = `${convertSingleCharToDoubleChar(title)}.${languageExtension}`;
-  const dateInfo = getDateString(new Date(Date.now()));
-  // prettier-ignore
-  const readme =
-    `# ${title} - ${examSequence}/${quizNumber} \n\n`
-    + `[문제 링크](${link}) \n\n`
-    + `### 성능 요약\n\n`
-    + `메모리: ${memory}, `
-    + `시간: ${runtime}\n\n`
-    + `### 제출 일자\n\n`
-    + `${dateInfo}\n\n`
+  const directory = getYYMMDD(new Date(Date.now()));
+  const message = link;
+  const fileName = `[goormlevel][${difficulty}] ${convertSingleCharToDoubleChar(title)}.${languageExtension}`;
 
-  return { examSequence, quizNumber, directory, message, fileName, readme, code };
+  return { examSequence, quizNumber, directory, message, fileName, code };
+}
+
+function getYYMMDD(date) {
+  const yy = String(date.getFullYear()).slice(-2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}${mm}${dd}`;
 }

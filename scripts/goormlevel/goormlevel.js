@@ -64,8 +64,6 @@ async function beginUpload(parsedData) {
       directory,
       // 파일 이름
       fileName,
-      // README.md 내용
-      readme,
       // 정답 코드
       code,
     } = parsedData;
@@ -88,7 +86,7 @@ async function beginUpload(parsedData) {
       return;
     }
     /* 신규 제출 번호라면 새롭게 커밋  */
-    await uploadOneSolveProblemOnGit({ code, readme, directory, fileName, message }, markUploadedCSS);
+    await uploadOneSolveProblemOnGit({ code, directory, fileName, message }, markUploadedCSS);
   }
 }
 

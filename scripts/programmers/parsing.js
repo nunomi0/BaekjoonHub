@@ -8,11 +8,11 @@
   - directory : 레포에 기록될 폴더명
   - message : 커밋 메시지
   - fileName : 파일명
-  - readme : README.md에 작성할 내용
   - code : 소스코드 내용
 */
 async function parseData() {
-  const link = document.querySelector('head > meta[name$=url]').content.replace(/\?.*/g, '').trim();
+  const lessonPath = window.location.pathname.match(/\/learn\/courses\/30\/lessons\/\d+/)?.[0] || window.location.pathname;
+  const link = `${window.location.origin}${lessonPath}`;
   const problemId = document.querySelector('div.main > div.lesson-content').getAttribute('data-lesson-id');
   const level = document.querySelector('body > div.main > div.lesson-content').getAttribute("data-challenge-level")
   const division = [...document.querySelector('ol.breadcrumb').childNodes]
@@ -44,27 +44,17 @@ async function parseData() {
 }
 
 async function makeData(origin) {
-  const { problem_description, problemId, level, result_message, division, language_extension, title, runtime, memory, code, language } = origin;
-  const directory = await getDirNameByOrgOption(`프로그래머스/${level}/${problemId}. ${convertSingleCharToDoubleChar(title)}`, language);
+  const { link, problemId, level, language_extension, title, runtime, memory, code } = origin;
+  const directory = getYYMMDD(new Date(Date.now()));
   const levelWithLv = `${level}`.includes('lv') ? level : `lv${level}`.replace('lv', 'level ');
-  const message = `[${levelWithLv}] Title: ${title}, Time: ${runtime}, Memory: ${memory} -BaekjoonHub`;
-  const fileName = `${convertSingleCharToDoubleChar(title)}.${language_extension}`;
-  const dateInfo = getDateString(new Date(Date.now()));
-  // prettier-ignore
-  const readme =
-    `# [${levelWithLv}] ${title} - ${problemId} \n\n`
-    + `[문제 링크](${link}) \n\n`
-    + `### 성능 요약\n\n`
-    + `메모리: ${memory}, `
-    + `시간: ${runtime}\n\n`
-    + `### 구분\n\n`
-    + `${division.replace('/', ' > ')}\n\n`
-    + `### 채점결과\n\n`
-    + `${result_message}\n\n`
-    + `### 제출 일자\n\n`
-    + `${dateInfo}\n\n`
-    + `### 문제 설명\n\n`
-    + `${problem_description}\n\n`
-    + `> 출처: 프로그래머스 코딩 테스트 연습, https://school.programmers.co.kr/learn/challenges`;
-  return { problemId, directory, message, fileName, readme, code };
+  const message = link;
+  const fileName = `[프로그래머스][${levelWithLv}] ${convertSingleCharToDoubleChar(title)}.${language_extension}`;
+  return { problemId, directory, message, fileName, code };
+}
+
+function getYYMMDD(date) {
+  const yy = String(date.getFullYear()).slice(-2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}${mm}${dd}`;
 }

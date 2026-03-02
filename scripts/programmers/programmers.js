@@ -6,6 +6,7 @@ const debug = false;
   2초마다 문제를 파싱하여 확인
 */
 let loader;
+let wasSolvedModalOpen = false;
 
 const currentUrl = window.location.href;
 
@@ -16,17 +17,26 @@ function startLoader() {
   loader = setInterval(async () => {
     // 기능 Off시 작동하지 않도록 함
     const enable = await checkEnable();
-    if (!enable) stopLoader();
-    // 제출 후 채점하기 결과가 성공적으로 나왔다면 코드를 파싱하고, 업로드를 시작한다
-    else if (getSolvedResult().includes('정답')) {
-      log('정답이 나왔습니다. 업로드를 시작합니다.');
+    if (!enable) {
       stopLoader();
-      try {
-        const bojData = await parseData();
-        await beginUpload(bojData);
-      } catch (error) {
-        log(error);
-      }
+      return;
+    }
+
+    const solvedModalOpen = getSolvedResult().includes('정답');
+    if (!solvedModalOpen) {
+      wasSolvedModalOpen = false;
+      return;
+    }
+    if (wasSolvedModalOpen) return;
+
+    wasSolvedModalOpen = true;
+    // 정답 모달이 새로 열린 순간 1회만 업로드를 시작한다.
+    log('정답 모달이 새로 열렸습니다. 업로드를 시작합니다.');
+    try {
+      const bojData = await parseData();
+      await beginUpload(bojData);
+    } catch (error) {
+      log(error);
     }
   }, 2000);
 }
@@ -36,7 +46,9 @@ function stopLoader() {
 }
 
 function getSolvedResult() {
-  const result = document.querySelector('div.modal-header > h4');
+  const openModal = document.querySelector('div#modal-dialog.show, div.modal.show, div#modal-dialog[style*="display: block"]');
+  if (isNull(openModal)) return '';
+  const result = openModal.querySelector('div.modal-header > h4');
   if (result) return result.innerText;
   return '';
 }
