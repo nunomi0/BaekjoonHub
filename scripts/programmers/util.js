@@ -3,16 +3,28 @@
  */
 function startUpload() {
   let elem = document.getElementById('BaekjoonHub_progress_anchor_element');
-  if (elem !== undefined) {
+  if (isNull(elem)) {
     elem = document.createElement('span');
     elem.id = 'BaekjoonHub_progress_anchor_element';
     elem.className = 'runcode-wrapper__8rXm';
     elem.style = 'margin-left: 10px;padding-top: 0px;';
   }
   elem.innerHTML = `<div id="BaekjoonHub_progress_elem" class="BaekjoonHub_progress"></div>`;
-  const target = document.querySelector('#modal-dialog > div.modal-dialog > div.modal-content > div.modal-footer');
+  const target = document.querySelector(
+    '#modal-dialog > div.modal-dialog > div.modal-content > div.modal-footer, ' +
+    '#modal-dialog .modal-footer, ' +
+    '.modal.show .modal-footer, ' +
+    '.modal.in .modal-footer, ' +
+    '[role="dialog"] .modal-footer'
+  );
   if (!isNull(target)) {
     target.prepend(elem);
+  } else if (isNull(document.getElementById('BaekjoonHub_progress_anchor_element'))) {
+    elem.style.position = 'fixed';
+    elem.style.right = '16px';
+    elem.style.bottom = '16px';
+    elem.style.zIndex = '2147483647';
+    document.body.append(elem);
   }
   // start the countdown
   startUploadCountDown();
@@ -28,6 +40,7 @@ function startUpload() {
 function markUploadedCSS(branches, directory) {
   uploadState.uploading = false;
   const elem = document.getElementById('BaekjoonHub_progress_elem');
+  if (isNull(elem)) return;
   elem.className = 'markuploaded';
   const uploadedUrl = "https://github.com/" +
               Object.keys(branches)[0] + "/tree/" + 
@@ -44,6 +57,7 @@ function markUploadedCSS(branches, directory) {
 function markUploadFailedCSS() {
   uploadState.uploading = false;
   const elem = document.getElementById('BaekjoonHub_progress_elem');
+  if (isNull(elem)) return;
   elem.className = 'markuploadfailed';
 }
 

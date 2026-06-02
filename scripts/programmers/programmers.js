@@ -36,7 +36,8 @@ function startLoader() {
       const bojData = await parseData();
       await beginUpload(bojData);
     } catch (error) {
-      log(error);
+      console.error('BaekjoonHub Programmers upload failed:', error);
+      markUploadFailedCSS();
     }
   }, 2000);
 }
@@ -46,40 +47,59 @@ function stopLoader() {
 }
 
 function getSolvedResult() {
-  const openModal = document.querySelector('div#modal-dialog.show, div.modal.show, div#modal-dialog[style*="display: block"]');
+  const modalSelectors = [
+    'div#modal-dialog',
+    'div.modal',
+    '[role="dialog"]',
+    '[class*="modal"]',
+  ];
+  const modals = [...document.querySelectorAll(modalSelectors.join(','))]
+    .filter((modal) => !modal.classList.contains('modal-backdrop'));
+  const openModal = modals.find((modal) => {
+    const style = window.getComputedStyle(modal);
+    return modal.classList.contains('show') ||
+      modal.classList.contains('in') ||
+      modal.getAttribute('aria-hidden') === 'false' ||
+      modal.style.display === 'block' ||
+      (style.display !== 'none' && style.visibility !== 'hidden' && modal.getClientRects().length > 0);
+  });
   if (isNull(openModal)) return '';
-  const result = openModal.querySelector('div.modal-header > h4');
-  if (result) return result.innerText;
-  return '';
+
+  const result = openModal.querySelector('div.modal-header > h4, #modal-dialog h4, .modal-header h4, [class*="modal"] h4');
+  return [result?.innerText, openModal?.innerText].filter(Boolean).join('\n');
 }
 
 /* 파싱 직후 실행되는 함수 */
 async function beginUpload(bojData) {
   log('bojData', bojData);
-  if (isNotEmpty(bojData)) {
-    startUpload();
-
-    const stats = await getStats();
-    const hook = await getHook();
-
-    const currentVersion = stats.version;
-    /* 버전 차이가 발생하거나, 해당 hook에 대한 데이터가 없는 경우 localstorage의 Stats 값을 업데이트하고, version을 최신으로 변경한다 */
-    if (isNull(currentVersion) || currentVersion !== getVersion() || isNull(await getStatsSHAfromPath(hook))) {
-      await versionUpdate();
-    }
-
-    /* 현재 제출하려는 소스코드가 기존 업로드한 내용과 같다면 중지 */
-    cachedSHA = await getStatsSHAfromPath(`${hook}/${bojData.directory}/${bojData.fileName}`)
-    calcSHA = calculateBlobSHA(bojData.code)
-    log('cachedSHA', cachedSHA, 'calcSHA', calcSHA)
-    if (cachedSHA == calcSHA) {
-      markUploadedCSS(stats.branches, bojData.directory);
-      console.log(`현재 제출번호를 업로드한 기록이 있습니다. problemIdID ${bojData.problemId}`);
-      return;
-    }
-    /* 신규 제출 번호라면 새롭게 커밋  */
-    await uploadOneSolveProblemOnGit(bojData, markUploadedCSS);
+  if (!isNotEmpty(bojData)) {
+    console.error('BaekjoonHub Programmers parse result is empty:', bojData);
+    markUploadFailedCSS();
+    return;
   }
+
+  startUpload();
+
+  const stats = await getStats();
+  const hook = await getHook();
+
+  const currentVersion = stats.version;
+  /* 버전 차이가 발생하거나, 해당 hook에 대한 데이터가 없는 경우 localstorage의 Stats 값을 업데이트하고, version을 최신으로 변경한다 */
+  if (isNull(currentVersion) || currentVersion !== getVersion() || isNull(await getStatsSHAfromPath(hook))) {
+    await versionUpdate();
+  }
+
+  /* 현재 제출하려는 소스코드가 기존 업로드한 내용과 같다면 중지 */
+  const cachedSHA = await getStatsSHAfromPath(`${hook}/${bojData.directory}/${bojData.fileName}`);
+  const calcSHA = calculateBlobSHA(bojData.code);
+  log('cachedSHA', cachedSHA, 'calcSHA', calcSHA);
+  if (cachedSHA == calcSHA) {
+    markUploadedCSS(stats.branches, bojData.directory);
+    console.log(`현재 제출번호를 업로드한 기록이 있습니다. problemIdID ${bojData.problemId}`);
+    return;
+  }
+  /* 신규 제출 번호라면 새롭게 커밋  */
+  await uploadOneSolveProblemOnGit(bojData, markUploadedCSS);
 }
 
 async function versionUpdate() {
